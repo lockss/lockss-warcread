@@ -31,7 +31,7 @@
 import sys
 from typing import Any, Dict, List, Optional
 
-import cgi
+from cgi import parse_header
 from collections.abc import Callable
 from lockss.pybasic.cliutil import BaseCli, CopyrightCommand, LicenseCommand, VersionCommand, exactly_one, one_or_more
 from lockss.pybasic.errorutil import InternalError
@@ -52,7 +52,7 @@ _columns: Dict[str, Callable[[Path, WarcRecord], Any]] = {
     'http_protocol': lambda f, r: r.get_http_protocol(),
     'http_reason': lambda f, r: r.get_http_reason(),
     'http_status': lambda f, r: r.get_http_status(),
-    'media_type': lambda f, r: cgi.parse_header(r.get_http_headers().get('Content-Type', ''))[0],
+    'media_type': lambda f, r: parse_header(r.get_http_headers().get('Content-Type', ''))[0],
     'warc_date': lambda f, r: r.get_date(),
     'warc_file': lambda f, r: f
 }
