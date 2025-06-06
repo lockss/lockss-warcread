@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional
 
 from cgi import parse_header
 from collections.abc import Callable
-from lockss.pybasic.cliutil import BaseCli, CopyrightCommand, LicenseCommand, VersionCommand, exactly_one, one_or_more
+from lockss.pybasic.cliutil import BaseCli, StringCommand, exactly_one, one_or_more, COPYRIGHT_DESCRIPTION, LICENSE_DESCRIPTION, VERSION_DESCRIPTION
 from lockss.pybasic.errorutil import InternalError
 from lockss.pybasic.fileutil import file_lines, path
 from pathlib import Path
@@ -58,109 +58,106 @@ _columns: Dict[str, Callable[[Path, WarcRecord], Any]] = {
 }
 
 
-class WarcsModel(BaseModel):
-    warc: Optional[List[FilePath]] = Field([], aliases=['-w'], description='add one or more WARC files to the list of WARC files to process')
-    warcs: Optional[List[FilePath]] = Field([], aliases=['-W'], description='add the WARC files listed in one or more files to the list of WARC files to process')
+class WarcsOptions(BaseModel):
+    warc: Optional[List[FilePath]] = Field([], aliases=['-w'], description='[WARCs] add one or more WARC files to the list of WARC files to process')
+    warcs: Optional[List[FilePath]] = Field([], aliases=['-W'], description='[WARCs] add the WARC files listed in one or more files to the list of WARC files to process')
 
     @validator('warc', 'warcs', pre=True, each_item=True)
-    def expand_and_resolve_each_path(cls, v: Path):
+    def _expand_each_warcs_path(cls, v: Path):
         return path(v)
 
-    def get_warcs(self):
+    def get_warcs(self) -> List[Path]:
         ret = [*self.warc[:], *[file_lines(file_path) for file_path in self.warcs]]
         if len(ret) == 0:
             raise RuntimeError('empty list of WARC files')
         return ret
 
 
-class ExtractCommand(WarcsModel):
-    http_headers: Optional[bool] = Field(False, aliases=['-H', '--hh'], description='extract HTTP headers for target URL')
-    http_payload: Optional[bool] = Field(False, aliases=['-P', '--hp'], description='extract HTTP payload for target URL')
-    target_url: str = Field(aliases=['-T'], description='target URL')
-    warc_headers: Optional[bool] = Field(False, aliases=['-A', '--wh'], description='extract WARC headers for target URL')
+class ExtractOptions(BaseModel):
+    target_url: str = Field(aliases=['-t'], description='[target] target URL')
+    http_headers: Optional[bool] = Field(False, aliases=['-H', '--hh'], description='[action] extract HTTP headers for target URL')
+    http_payload: Optional[bool] = Field(False, aliases=['-P', '--hp'], description='[action] extract HTTP payload for target URL')
+    warc_headers: Optional[bool] = Field(False, aliases=['-A', '--wh'], description='[action] extract WARC headers for target URL')
 
     @root_validator
-    def exactly_one_action(cls, values):
+    def _exactly_one_action(cls, values):
         return exactly_one(values, 'http_headers', 'http_payload', 'warc_headers')
 
 
-class ReportCommand(WarcsModel):
-    content_type: Optional[bool] = Field(False, aliases=['-c'], description='include HTTP Content-Type (e.g. text/xml; charset=UTF-8)')
-    http_code: Optional[bool] = Field(False, aliases=['-n'], description='include HTTP response code (e.g. 404)')
-    http_date: Optional[bool] = Field(False, aliases=['-d'], description='include HTTP Date')
-    http_protocol: Optional[bool] = Field(False, aliases=['-p'], description='include HTTP protocol (e.g. HTTP/1.1)')
-    http_reason: Optional[bool] = Field(False, aliases=['-r'], description='include HTTP reason (e.g. Not Found)')
-    http_status: Optional[bool] = Field(False, aliases=['-s'], description='include HTTP status (e.g. HTTP/1.1 404 Not Found)')
-    media_type: Optional[bool] = Field(False, aliases=['-m'], description='include media type of HTTP Content-Type (e.g. text/xml)')
-    url: Optional[bool] = Field(False, aliases=['-u'], description='include URL of WARC record')
-    warc_date: Optional[bool] = Field(False, aliases=['-D'], description='include date of WARC record')
-    warc_file: Optional[bool] = Field(False, aliases=['-F'], description='include name of WARC file')
+class ReportOptions(BaseModel):
+    content_type: Optional[bool] = Field(False, aliases=['-c'], description='[column] include HTTP Content-Type (e.g. text/xml; charset=UTF-8)')
+    http_code: Optional[bool] = Field(False, aliases=['-n'], description='[column] include HTTP response code (e.g. 404)')
+    http_date: Optional[bool] = Field(False, aliases=['-d'], description='[column] include HTTP Date')
+    http_protocol: Optional[bool] = Field(False, aliases=['-p'], description='[column] include HTTP protocol (e.g. HTTP/1.1)')
+    http_reason: Optional[bool] = Field(False, aliases=['-r'], description='[column] include HTTP reason (e.g. Not Found)')
+    http_status: Optional[bool] = Field(False, aliases=['-s'], description='[column] include HTTP status (e.g. HTTP/1.1 404 Not Found)')
+    media_type: Optional[bool] = Field(False, aliases=['-m'], description='[column] include media type of HTTP Content-Type (e.g. text/xml)')
+    url: Optional[bool] = Field(False, aliases=['-u'], description='[column] include URL of WARC record')
+    warc_date: Optional[bool] = Field(False, aliases=['-D'], description='[column] include date of WARC record')
+    warc_file: Optional[bool] = Field(False, aliases=['-F'], description='[column] include name of WARC file')
 
     @root_validator
-    def one_or_more_columns(cls, values):
-        return one_or_more(values,
-                           'content_type', 'http_code', 'http_date', 'http_protocol', 'http_reason',
-                           'http_status', 'media_type', 'url', 'warc_date', 'warc_file')
+    def _one_or_more_columns(cls, values):
+        return one_or_more(values, *ReportOptions.__fields__.keys())
 
 
-class WarcReadModel(BaseModel):
-    copyright: Optional[CopyrightCommand.make(__copyright__)] = CopyrightCommand.field()
+class ExtractCommand(ExtractOptions, WarcsOptions): pass
+class ReportCommand(ReportOptions, WarcsOptions): pass
+
+
+class WarcReadCommand(BaseModel):
+    copyright: Optional[StringCommand.type(__copyright__)] = Field(description=COPYRIGHT_DESCRIPTION)
     extract: Optional[ExtractCommand] = Field(description='extract parts of response records')
-    license: Optional[LicenseCommand.make(__license__)] = LicenseCommand.field()
+    license: Optional[StringCommand.type(__license__)] = Field(description=LICENSE_DESCRIPTION)
     report: Optional[ReportCommand] = Field(description='output tab-separated report over response records')
-    version: Optional[VersionCommand.make(__version__)] = VersionCommand.field()
+    version: Optional[StringCommand.type(__version__)] = Field(description=VERSION_DESCRIPTION)
 
 
-class WarcReadCli(BaseCli[WarcReadModel]):
+class WarcReadCli(BaseCli[WarcReadCommand]):
 
     def __init__(self):
-        super().__init__(model=WarcReadModel,
+        super().__init__(model=WarcReadCommand,
                          prog='warcread',
                          description='Tool for WARC file reporting')
 
-    def dispatch(self):
-        if self.args.copyright:
-            self.args.copyright.print()
-        if self.args.license:
-            self.args.license.print()
-        if self.args.version:
-            self.args.version.print()
-        if self.args.extract:
-            self.extract()
-        elif self.args.report:
-            self.report()
-        else:
-            raise InternalError()
+    def _copyright(self, copyright_model: StringCommand) -> None:
+        self._do_string_command(copyright_model)
 
-    def extract(self):
-        eargs = self.args.extract
-        url = eargs.target_url
-        for warc_path in eargs.get_warcs():
+    def _do_string_command(self, string_command: StringCommand) -> None:
+        string_command()
+
+    def _extract(self, extract_command: ExtractCommand):
+        url = extract_command.target_url
+        for warc_path in extract_command.get_warcs():
             warc = open_warc(warc_path)
             for record in browse_responses(warc):
                 if record.get_url() == url:
-                    if eargs.http_headers:
+                    if extract_command.http_headers:
                         for k, v in record.get_http_headers().items():
                             if not k.startswith('$'):
                                 print(f'{k}: {v}')
-                    elif eargs.http_payload:
+                    elif extract_command.http_payload:
                         for line in record.get_http_payload():
                             print(line, end='')
-                    elif eargs.warc_headers:
+                    elif extract_command.warc_headers:
                         for k, v in record.get_warc_headers().items():
                             print(f'{k}: {v}')
                     else:
                         raise InternalError()
-                    return
         else:
             sys.exit(f'Target URL not found: {url}')
 
-    def report(self):
-        rargs = self.args.report
-        for warc_path in rargs.get_warcs():
+    def _license(self, license_model: StringCommand) -> None:
+        self._do_string_command(license_model)
+
+    def _report(self, report_command: ReportCommand):
+        for warc_path in report_command.get_warcs():
             warc = open_warc(warc_path)
             for record in browse_responses(warc):
-                print('\t'.join([str(lam(path, record)) for key, lam in _columns.items() if getattr(rargs, key)]))
+                print('\t'.join([str(lam(warc_path, record)) for key, lam in _columns.items() if getattr(report_command, key)]))
+
+    def _version(self, version_model: StringCommand) -> None:
+        self._do_string_command(version_model)
 
 
 def main():
