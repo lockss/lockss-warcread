@@ -2,8 +2,8 @@
 WarcRead
 ========
 
-.. |RELEASE| replace:: 0.4.0-dev5
-.. |RELEASE_DATE| replace:: ?
+.. |RELEASE| replace:: 0.4.0
+.. |RELEASE_DATE| replace:: 2025-07-01
 
 .. |WARC| replace:: ``--warc/-w``
 .. |WARCS| replace:: ``--warcs/-W``

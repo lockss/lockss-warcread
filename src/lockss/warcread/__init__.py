@@ -64,4 +64,4 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 '''.strip()
 
-__version__ = '0.4.0-dev5'
+__version__ = '0.5.0-dev1'
