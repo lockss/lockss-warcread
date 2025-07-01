@@ -29,11 +29,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import cgi
-import gzip
 from html.parser import HTMLParser
 import io
 from datetime import datetime
-import os
 from pathlib import Path
 import re
 import sys
@@ -598,7 +596,7 @@ class WarcProcessor(object):
 # Group 6: one alternative for the value
 # Group 7: one alternative for the key
 # Group 8: one alternative for the key
-_RE_HTML_META = re.compile('''<meta\s+(?:name=\s*(?:"([^"]*)"|'([^']*)')\s+content=\s*(?:"([^"]*)"|'([^']*)')|content=\s*(?:"([^"]*)"|'([^']*)')\s+name=\s*(?:"([^"]*)"|'([^']*)'))\s*/?>''', re.IGNORECASE)
+_RE_HTML_META = re.compile(r'''<meta\s+(?:name=\s*(?:"([^"]*)"|'([^']*)')\s+content=\s*(?:"([^"]*)"|'([^']*)')|content=\s*(?:"([^"]*)"|'([^']*)')\s+name=\s*(?:"([^"]*)"|'([^']*)'))\s*/?>''', re.IGNORECASE)
 _RE_HTML_TITLE = re.compile(r'<title[^>]*>([^<]+)</title', re.IGNORECASE)
 
 def scrape_html_meta_tags(http_payload, encoding=None):
