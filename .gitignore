@@ -1,2 +1,9 @@
+# Poetry build
+/dist/
+
+# Python
+/**/__pycache__
+/**/*.pyc
+
 # PyCharm/IntelliJ artifacts
 /.idea/
