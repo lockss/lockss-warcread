@@ -28,6 +28,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+"""
+Library of utilities for WARC file processing.
+"""
+
 import cgi
 from html.parser import HTMLParser
 import io

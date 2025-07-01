@@ -28,6 +28,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+"""
+Command line tool for WARC file reporting and processing.
+"""
+
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -157,12 +161,24 @@ class WarcReadCli(BaseCli[WarcReadCommand]):
         self._do_string_command(string_command)
 
     def _do_string_command(self, string_command: StringCommand) -> None:
+        """
+        Performs one string command.
+
+        :param string_command: A ``StringCommand`` model.
+        :type auid_command: StringCommand
+        """
         string_command()
 
     def _ext(self, extract_command: ExtractCommand) -> None:
         self._extract(extract_command)
 
     def _extract(self, extract_command: ExtractCommand) -> None:
+        """
+        Performans one extract command.
+
+        :param extract_command: An ``ExtractCommand`` model.
+        :type extract_command: ExtractCommand
+        """
         url = extract_command.target_url
         for warc_path in extract_command.get_warcs():
             warc = open_warc(warc_path)
@@ -190,6 +206,12 @@ class WarcReadCli(BaseCli[WarcReadCommand]):
         self._report(report_command)
 
     def _report(self, report_command: ReportCommand) -> None:
+        """
+        Performs one report command.
+
+        :param report_command: An ``ReportCommand`` model.
+        :type report_command: ReportCommand
+        """
         for warc_path in report_command.get_warcs():
             warc = open_warc(warc_path)
             for record in browse_responses(warc):
@@ -200,6 +222,9 @@ class WarcReadCli(BaseCli[WarcReadCommand]):
 
 
 def main():
+    """
+    Entry point for the warcread command line tool.
+    """
     WarcReadCli().run()
 
 
