@@ -194,7 +194,7 @@ class WarcReadCli(BaseCli[WarcReadCommand]):
                             payload = record.get_binary_http_payload()
                             chunk = payload.read(1024)
                             while len(chunk) > 0:
-                                sys.stdout.write(chunk)
+                                sys.stdout.buffer.write(chunk)
                                 chunk = payload.read(1024)
                         else:
                             for line in record.get_http_payload():
