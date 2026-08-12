@@ -89,6 +89,7 @@ class ExtractOptions(BaseModel):
     http_headers: Optional[bool] = Field(False, aliases=['-H', '--hh'], description='(action) extract HTTP headers for target URL')
     http_payload: Optional[bool] = Field(False, aliases=['-P', '--hp'], description='(action) extract HTTP payload for target URL')
     warc_headers: Optional[bool] = Field(False, aliases=['-A', '--wh'], description='(action) extract WARC headers for target URL')
+    binary: Optional[bool] = Field(False, aliases=['-b'], description='(option) extract as binary (normally line-oriented)')
 
     @root_validator
     def _exactly_one_action(cls, values):
@@ -189,8 +190,15 @@ class WarcReadCli(BaseCli[WarcReadCommand]):
                             if not k.startswith('$'):
                                 print(f'{k}: {v}')
                     elif extract_command.http_payload:
-                        for line in record.get_http_payload():
-                            print(line, end='')
+                        if extract_command.binary:
+                            payload = record.get_binary_http_payload()
+                            chunk = payload.read(1024)
+                            while len(chunk) > 0:
+                                sys.stdout.write(chunk)
+                                chunk = payload.read(1024)
+                        else:
+                            for line in record.get_http_payload():
+                                print(line, end='')
                     elif extract_command.warc_headers:
                         for k, v in record.get_warc_headers().items():
                             print(f'{k}: {v}')
