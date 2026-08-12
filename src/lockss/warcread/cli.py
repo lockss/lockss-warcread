@@ -204,6 +204,7 @@ class WarcReadCli(BaseCli[WarcReadCommand]):
                             print(f'{k}: {v}')
                     else:
                         raise InternalError()
+                    break
         else:
             sys.exit(f'Target URL not found: {url}')
 
